@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OPM ОТК Mobile</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a3a3a">
+
+<style>
+body{margin:0;font-family:Arial;background:#e9e9e9;}
+.header{background:#3a3a3a;color:#fff;padding:10px;}
+.card{background:#fff;margin:10px;padding:10px;border-radius:10px;}
+button{
+width:100%;padding:14px;margin:6px 0;
+background:#ffcc00;border:none;border-radius:10px;
+font-size:16px;font-weight:600;
+}
+input,textarea{
+width:100%;padding:10px;margin:6px 0;
+font-size:16px;border-radius:8px;border:1px solid #ccc;
+}
+.badge{font-size:11px;padding:3px 6px;border-radius:4px;color:#fff;}
+.A{background:#c0392b;}
+.B{background:#e67e22;}
+.C{background:#2980b9;}
+.check{background:#fafafa;padding:8px;border-radius:8px;margin-top:8px;}
+</style>
+</head>
+
+<body>
+
+<div class="header">OPM ОТК Mobile (PWA)</div>
+
+<div class="card">
+
+<button onclick="add()">+ Добавить позицию</button>
+<button onclick="report()">📄 Сформировать акт</button>
+<button onclick="send()">📧 Отправить</button>
+
+<div id="app"></div>
+<div id="out"></div>
+
+</div>
+
+<script>
+
+const checks=[
+["Размеры","A"],
+["Резьба","A"],
+["Внешний вид","A"],
+["Упаковка","B"]
+];
+
+let data=[];
+
+function add(){
+data.push({p:"",s:"",b:"",c:{}});
+render();
+}
+
+function set(i,j,k,v){
+if(!data[i].c[j]) data[i].c[j]={};
+data[i].c[j][k]=v;
+}
+
+function render(){
+let el=document.getElementById("app");
+el.innerHTML="";
+
+data.forEach((x,i)=>{
+
+let div=document.createElement("div");
+div.className="card";
+
+div.innerHTML=`
+<input placeholder="Товар">
+<input placeholder="Поставщик">
+<input placeholder="Партия">
+`;
+
+let inp=div.querySelectorAll("input");
+
+inp[0].value=x.p;
+inp[1].value=x.s;
+inp[2].value=x.b;
+
+inp[0].oninput=e=>x.p=e.target.value;
+inp[1].oninput=e=>x.s=e.target.value;
+inp[2].oninput=e=>x.b=e.target.value;
+
+checks.forEach((c,j)=>{
+
+let d=x.c[j]||{};
+
+let ch=document.createElement("div");
+ch.className="check";
+
+ch.innerHTML=`
+<b>${c[0]}</b>
+<span class="badge ${c[1]}">${c[1]}</span><br>
+
+<label><input type="radio" name="c${i}_${j}">OK</label>
+<label><input type="radio" name="c${i}_${j}">NOK</label>
+
+<textarea placeholder="Комментарий">${d.t||""}</textarea>
+`;
+
+let r=ch.querySelectorAll("input");
+r[0].onchange=()=>set(i,j,'s','OK');
+r[1].onchange=()=>set(i,j,'s','NOK');
+
+ch.querySelector("textarea").oninput=e=>set(i,j,'t',e.target.value);
+
+div.appendChild(ch);
+});
+
+el.appendChild(div);
+});
+}
+
+function report(){
+let t="ОТК АКТ\n\n";
+
+data.forEach((x,i)=>{
+t+=`ПОЗИЦИЯ ${i+1}\n`;
+t+=x.p+"\n"+x.s+"\n"+x.b+"\n\n";
+});
+
+document.getElementById("out").innerText=t;
+}
+
+function send(){
+location.href=
+"mailto:avg@opm.ru?subject=акт_поставщик&body="+encodeURIComponent(document.getElementById("out").innerText);
+}
+
+add();
+
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
